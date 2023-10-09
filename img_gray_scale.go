@@ -25,8 +25,10 @@ import (
 	"fmt"
 	"image"
 	"image/color"
+	"image/jpeg" // Import the JPEG package
 	"image/png"
 	"os"
+	"strings"
 )
 
 // ConvertImageToGrayscale converts a color image to grayscale and saves it to the specified output path.
@@ -38,10 +40,20 @@ func ConvertImageToGrayscale(inputPath, outputPath string) error {
 	}
 	defer reader.Close()
 
-	// Decode the image
-	img, _, err := image.Decode(reader)
-	if err != nil {
-		return fmt.Errorf("error decoding the image: %v", err)
+	// Detect the image format based on the file extension
+	var img image.Image
+	if strings.HasSuffix(strings.ToLower(inputPath), ".jpg") || strings.HasSuffix(strings.ToLower(inputPath), ".jpeg") {
+		img, _, err = image.Decode(reader)
+		if err != nil {
+			return fmt.Errorf("error decoding the image: %v", err)
+		}
+	} else if strings.HasSuffix(strings.ToLower(inputPath), ".png") {
+		img, _, err = image.Decode(reader)
+		if err != nil {
+			return fmt.Errorf("error decoding the image: %v", err)
+		}
+	} else {
+		return fmt.Errorf("unsupported image format: %s", inputPath)
 	}
 
 	// Get image bounds
@@ -70,9 +82,17 @@ func ConvertImageToGrayscale(inputPath, outputPath string) error {
 	}
 	defer grayFile.Close()
 
-	// Use the png.Encode function to save the grayscale image
-	if err := png.Encode(grayFile, grayImg); err != nil {
-		return fmt.Errorf("error encoding grayscale image: %v", err)
+	// Determine the output format based on the file extension
+	if strings.HasSuffix(strings.ToLower(outputPath), ".jpg") || strings.HasSuffix(strings.ToLower(outputPath), ".jpeg") {
+		if err := jpeg.Encode(grayFile, grayImg, nil); err != nil {
+			return fmt.Errorf("error encoding grayscale image: %v", err)
+		}
+	} else if strings.HasSuffix(strings.ToLower(outputPath), ".png") {
+		if err := png.Encode(grayFile, grayImg); err != nil {
+			return fmt.Errorf("error encoding grayscale image: %v", err)
+		}
+	} else {
+		return fmt.Errorf("unsupported output image format: %s", outputPath)
 	}
 
 	fmt.Println("Grayscale image saved to", outputPath)
